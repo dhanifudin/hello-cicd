@@ -1,0 +1,30 @@
+name: Continuous Deployment
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: SSH and deploy app
+      uses: appleboy/ssh-action@v0.1.0
+      env:
+        APP_HOST: ${{ secrets.APP_HOST }}
+        APP_PORT: ${{ secrets.APP_PORT }}
+        DOCROOT: ${{ secrets.DOCROOT }}
+        REPO_URL: ${{ secrets.REPO_URL }}
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        password: ${{ secrets.SSH_PASSWORD }}
+        port: 22
+        envs: APP_HOST,APP_PORT,DOCROOT,REPO_URL
+        script: |
+          sudo apt-get install -y gettext-base
+          git -C $DOCROOT pull || git clone --single-branch --branch master $REPO_URL $DOCROOT
+          cp ${DOCROOT}/.env.example ${DOCROOT}/.env
+          envsubst < ${DOCROOT}/.env
